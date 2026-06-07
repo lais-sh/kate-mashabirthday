@@ -1,586 +1,295 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Волшебная сказка</title>
-    <style>
-        ::file-selector-button { display: none; }
-    </style>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
- 
-        body {
-            font-family: 'Georgia', serif;
-            background: linear-gradient(135deg, #f5e6f0 0%, #e8d5e8 25%, #f0dce8 50%, #e8d5e8 75%, #f5e6f0 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-            position: relative;
-            padding: 20px;
-        }
- 
-        .sparkles-bg {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
- 
-        .sparkle {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: #d4af37;
-            border-radius: 50%;
-            opacity: 0.5;
-            animation: sparkle 3s infinite;
-        }
- 
-        @keyframes sparkle {
-            0%, 100% { opacity: 0.2; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.3); }
-        }
- 
-        .petal {
-            position: absolute;
-            font-size: 20px;
-            opacity: 0.4;
-            animation: float-down 6s ease-in infinite;
-            pointer-events: none;
-        }
- 
-        @keyframes float-down {
-            0% { transform: translateY(-20px) translateX(0) rotateZ(0deg); opacity: 0.6; }
-            50% { opacity: 0.4; }
-            100% { transform: translateY(100vh) translateX(30px) rotateZ(180deg); opacity: 0; }
-        }
- 
-        .screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            opacity: 1;
-            transition: opacity 0.6s ease;
-        }
- 
-        .screen.hidden {
-            display: none;
-            opacity: 0;
-            pointer-events: none;
-        }
- 
-        .intro-screen { flex-direction: column; }
-        .intro-screen.hidden { display: none; }
- 
-        .title {
-            text-align: center;
-            color: #c7b555;
-            font-size: 2.5em;
-            font-weight: normal;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-        }
- 
-        .gift-scene {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
-            margin: 30px 0;
-            perspective: 1200px;
-        }
- 
-        /* ===== ENVELOPE (исправленный) ===== */
-        .envelope-wrap {
-            position: relative;
-            width: min(340px, 85vw);
-            height: 220px;
-            cursor: pointer;
-        }
- 
-        /* Полное тело конверта */
-        .env-body {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: linear-gradient(160deg, #faf6f0 0%, #f0e8e0 100%);
-            border: 2px solid #d4c5b8;
-            border-radius: 6px;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
-            overflow: hidden;
-        }
- 
-        /* Нижний треугольник внутри тела */
-        .env-bottom {
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 100%; height: 100%;
-            background:
-                linear-gradient(to bottom right, transparent 49.5%, #e4dbd2 50%) left / 50% 100% no-repeat,
-                linear-gradient(to bottom left,  transparent 49.5%, #ddd4cb 50%) right / 50% 100% no-repeat;
-        }
- 
-        /* Клапан — треугольник сверху, точно совмещён */
-        .env-flap {
-            position: absolute;
-            top: -1px;
-            left: -1px;
-            width: calc(100% + 2px);
-            /* высота = 55% от конверта */
-            height: 0;
-            border-left: calc(min(340px, 85vw) / 2 + 1px) solid transparent;
-            border-right: calc(min(340px, 85vw) / 2 + 1px) solid transparent;
-            border-top: calc(220px * 0.55) solid #f0e8df;
-            transform-origin: top center;
-            transform-style: preserve-3d;
-            z-index: 5;
-            transition: transform 0.9s cubic-bezier(0.34, 1.1, 0.64, 1);
-            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.1));
-        }
- 
-        /* Тонкая граница клапана */
-        .env-flap::after {
-            content: '';
-            position: absolute;
-            top: -121px; /* = border-top height */
-            left: calc(-1 * (min(340px, 85vw) / 2 + 1px));
-            width: 0; height: 0;
-            border-left: calc(min(340px, 85vw) / 2 + 1px) solid transparent;
-            border-right: calc(min(340px, 85vw) / 2 + 1px) solid transparent;
-            border-top: calc(220px * 0.55) solid #d4c5b8;
-            z-index: -1;
-            transform: scaleY(1.012);
-        }
- 
-        /* Открытый конверт */
-        .envelope-wrap.open .env-flap {
-            transform: rotateX(-185deg);
-        }
-        .envelope-wrap.open .env-seal {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
- 
-        /* Печать */
-        .env-seal {
-            position: absolute;
-            top: 52%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 6;
-            transition: opacity 0.3s;
-        }
- 
-        /* ===== BOUQUET ===== */
-        .bouquet {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            animation: bouquet-sway 3.5s ease-in-out infinite;
-        }
- 
-        @keyframes bouquet-sway {
-            0%, 100% { transform: translateX(0) rotateZ(0deg); }
-            50% { transform: translateX(8px) rotateZ(-2deg); }
-        }
- 
-        .svg-bouquet {
-            width: min(200px, 70vw);
-            height: auto;
-            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.1));
-        }
- 
-        /* ===== BUTTON ===== */
-        .button-container {
-            margin-top: 30px;
-            z-index: 30;
-        }
- 
-        .magic-button {
-            background: linear-gradient(135deg, #ffc0d9 0%, #ffe0ec 50%, #ffb3d9 100%);
-            border: 3px solid #d4a5b8;
-            color: #8b5a7f;
-            padding: 16px 48px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 12px 30px rgba(255,192,217,0.4), inset 0 2px 0 rgba(255,255,255,0.9);
-            font-family: 'Georgia', serif;
-            letter-spacing: 0.5px;
-        }
- 
-        .magic-button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 16px 40px rgba(255,192,217,0.6), inset 0 2px 0 rgba(255,255,255,0.9);
-        }
- 
-        .magic-button:active:not(:disabled) { transform: translateY(-1px); }
-        .magic-button:disabled { opacity: 0.6; cursor: not-allowed; }
- 
-        /* ===== INTRO MESSAGE ===== */
-        .intro-message {
-            position: fixed;
-            max-width: 340px;
-            background: linear-gradient(135deg, #fffacd 0%, #ffeecc 100%);
-            border: 3px solid #d4a574;
-            border-radius: 25px;
-            padding: 28px;
-            top: 20%; left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            opacity: 0;
-            box-shadow: 0 18px 45px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.95);
-            pointer-events: none;
-            text-align: center;
-            color: #8b5a7f;
-            font-size: 16px;
-            font-weight: bold;
-            line-height: 1.7;
-        }
- 
-        .intro-message::after {
-            content: '';
-            position: absolute;
-            bottom: -15px; left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border: 12px solid transparent;
-            border-top-color: #d4a574;
-            border-bottom: 0;
-        }
- 
-        .intro-message.show {
-            animation: messageAppear 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
-        }
- 
-        @keyframes messageAppear {
-            0% { opacity: 0; transform: translateX(-50%) scale(0.7) translateY(20px); }
-            100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
-        }
- 
-        .intro-message.hidden { display: none; }
- 
-        /* ===== CARD SCREEN ===== */
-        .card-screen { flex-direction: column; }
-        .card-screen.hidden { display: none; }
- 
-        .parchment-card {
-            width: 90%;
-            max-width: 540px;
-            max-height: 80vh;
-            background: linear-gradient(135deg, #f5e6d3 0%, #e8d9c3 100%);
-            border: 4px solid #8b7355;
-            border-radius: 15px;
-            padding: 48px 45px;
-            box-shadow: 0 28px 80px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.95);
-            overflow-y: auto;
-        }
- 
-        .parchment-content { position: relative; z-index: 2; }
- 
-        .page-text {
-            font-size: 17px;
-            line-height: 1.95;
-            color: #3d2817;
-            text-align: center;
-            min-height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 18px;
-            margin-bottom: 40px;
-            white-space: pre-line;
-        }
- 
-        .page-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            margin-top: 35px;
-        }
- 
-        .page-indicator {
-            flex: 1;
-            text-align: center;
-            color: #8b7355;
-            font-weight: bold;
-            font-size: 16px;
-        }
- 
-        .nav-button {
-            background: linear-gradient(135deg, #ffc0d9 0%, #ffe0ec 50%, #ffb3d9 100%);
-            border: 2px solid #d4a5b8;
-            color: #8b5a7f;
-            padding: 12px 24px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 18px rgba(255,192,217,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
-            min-width: 95px;
-            font-family: 'Georgia', serif;
-        }
- 
-        .nav-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 9px 25px rgba(255,192,217,0.5), inset 0 1px 0 rgba(255,255,255,0.9);
-        }
- 
-        .nav-button:active:not(:disabled) { transform: translateY(0); }
-        .nav-button:disabled { opacity: 0.4; cursor: not-allowed; }
- 
-        /* ===== FINAL SCREEN ===== */
-        .final-screen {
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .final-screen.hidden { display: none; }
- 
-        .final-message {
-            text-align: center;
-            color: #8b5a7f;
-            font-size: 28px;
-            font-weight: normal;
-            line-height: 1.8;
-            max-width: 600px;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.1);
-            animation: messageAppear 0.8s ease-out forwards;
-        }
- 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 700px) {
-            .gift-scene { flex-direction: column; gap: 20px; margin: 20px 0; }
-            .title { font-size: 1.9em; margin-bottom: 10px; }
-            .parchment-card { padding: 38px 35px; }
-            .page-text { font-size: 15px; min-height: 260px; }
-            .nav-button { padding: 10px 18px; font-size: 12px; }
-            .magic-button { padding: 13px 36px; font-size: 14px; }
-            .final-message { font-size: 22px; }
-        }
- 
-        @media (max-width: 480px) {
-            .title { font-size: 1.3em; }
-            .svg-bouquet { width: 70vw; }
-            .parchment-card { padding: 28px 22px; max-height: 70vh; }
-            .page-text { font-size: 13px; line-height: 1.75; min-height: 200px; gap: 14px; }
-            .page-controls { gap: 10px; margin-top: 25px; }
-            .nav-button { padding: 8px 14px; font-size: 11px; min-width: 80px; }
-            .page-indicator { font-size: 13px; }
-            .magic-button { padding: 11px 28px; font-size: 13px; }
-            .final-message { font-size: 18px; padding: 20px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Волшебная сказка</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --pink:#ffc0d9;--pink-d:#d4a5b8;
+  --purple:#8b5a7f;--gold:#c7b555;
+  --pb:#8b7355;--td:#3d2817;
+}
+
+html,body{width:100%;min-height:100vh;overflow-x:hidden}
+
+body{
+  font-family:'Georgia',serif;
+  background:linear-gradient(135deg,#f5e6f0,#e8d5e8 25%,#f0dce8 50%,#e8d5e8 75%,#f5e6f0);
+  background-attachment:fixed;
+}
+
+/* sparkles */
+#bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sparkle{position:absolute;width:3px;height:3px;background:#d4af37;border-radius:50%;animation:sp 3s infinite}
+@keyframes sp{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:.8;transform:scale(1.3)}}
+.petal{position:absolute;font-size:16px;animation:fd 6s ease-in infinite;pointer-events:none}
+@keyframes fd{0%{transform:translateY(-20px) rotateZ(0);opacity:.6}100%{transform:translateY(105vh) translateX(30px) rotateZ(180deg);opacity:0}}
+
+/* screens */
+.screen{
+  position:relative;z-index:10;
+  width:100%;min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:clamp(16px,4vw,32px);
+  text-align:center;
+}
+.screen.hidden{display:none}
+
+/* title */
+.title{
+  color:var(--gold);
+  font-size:clamp(1.3em,5.5vw,2.4em);
+  font-weight:normal;letter-spacing:2px;
+  text-shadow:2px 2px 8px rgba(0,0,0,.1);
+  margin-bottom:clamp(14px,3vw,26px);
+}
+
+/* gift scene */
+.gift-scene{
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(14px,5vw,48px);flex-wrap:wrap;
+  margin-bottom:clamp(14px,3vw,26px);
+}
+
+/* envelope */
+.envelope-wrap{position:relative;cursor:pointer;flex-shrink:0}
+.env-body{position:absolute;inset:0;background:linear-gradient(160deg,#faf6f0,#f0e8e0);border:2px solid #d4c5b8;border-radius:6px;box-shadow:0 10px 28px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.7);overflow:hidden}
+.env-bottom{position:absolute;inset:0;background:linear-gradient(to bottom right,transparent 49.5%,#e4dbd2 50%) left/50% 100% no-repeat,linear-gradient(to bottom left,transparent 49.5%,#ddd4cb 50%) right/50% 100% no-repeat}
+.env-flap-border,.env-flap{position:absolute;top:-1px;left:-1px;width:0;height:0;border-style:solid;border-color:transparent;transform-origin:top center;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.34,1.1,.64,1)}
+.env-flap-border{z-index:4;pointer-events:none}
+.env-flap{z-index:5;filter:drop-shadow(0 3px 4px rgba(0,0,0,.1))}
+.envelope-wrap.open .env-flap,.envelope-wrap.open .env-flap-border{transform:rotateX(-185deg)}
+.env-seal{position:absolute;top:52%;left:50%;transform:translate(-50%,-50%);z-index:6;transition:opacity .2s}
+.envelope-wrap.open .env-seal{opacity:0}
+
+/* bouquet */
+.bouquet{animation:sway 3.5s ease-in-out infinite;flex-shrink:0}
+@keyframes sway{0%,100%{transform:translateX(0) rotateZ(0)}50%{transform:translateX(6px) rotateZ(-2deg)}}
+.svg-bouquet{width:clamp(90px,20vw,180px);height:auto;filter:drop-shadow(0 10px 25px rgba(0,0,0,.1))}
+
+/* button */
+.magic-btn{
+  background:linear-gradient(135deg,var(--pink),#ffe0ec,#ffb3d9);
+  border:3px solid var(--pink-d);color:var(--purple);
+  padding:clamp(11px,2.5vw,15px) clamp(28px,6vw,48px);
+  font-size:clamp(14px,3.5vw,16px);font-weight:bold;
+  border-radius:50px;cursor:pointer;font-family:'Georgia',serif;
+  box-shadow:0 12px 30px rgba(255,192,217,.4),inset 0 2px 0 rgba(255,255,255,.9);
+  transition:transform .3s,box-shadow .3s;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.magic-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 16px 40px rgba(255,192,217,.6),inset 0 2px 0 rgba(255,255,255,.9)}
+.magic-btn:active:not(:disabled){transform:translateY(-1px)}
+.magic-btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* intro bubble */
+.intro-msg{
+  position:fixed;top:18%;left:50%;transform:translateX(-50%);
+  width:clamp(240px,80vw,330px);
+  background:linear-gradient(135deg,#fffacd,#ffeecc);
+  border:3px solid #d4a574;border-radius:22px;
+  padding:clamp(16px,4vw,26px);z-index:200;
+  opacity:0;pointer-events:none;
+  color:var(--purple);font-size:clamp(14px,3.5vw,16px);
+  font-weight:bold;line-height:1.7;
+  box-shadow:0 18px 45px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.intro-msg::after{content:'';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);border:11px solid transparent;border-top-color:#d4a574;border-bottom:0}
+.intro-msg.hidden{display:none}
+.intro-msg.show{animation:pop .6s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes pop{0%{opacity:0;transform:translateX(-50%) scale(.7) translateY(16px)}100%{opacity:1;transform:translateX(-50%) scale(1) translateY(0)}}
+
+/* parchment card */
+.parchment{
+  width:100%;max-width:540px;
+  background:linear-gradient(135deg,#f5e6d3,#e8d9c3);
+  border:4px solid var(--pb);border-radius:15px;
+  padding:clamp(22px,5vw,46px) clamp(18px,5vw,42px);
+  box-shadow:0 28px 80px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.page-text{
+  font-size:clamp(14px,3.5vw,17px);line-height:1.95;
+  color:var(--td);text-align:center;
+  min-height:clamp(150px,30vw,260px);
+  display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2vw,16px);
+  margin-bottom:clamp(18px,4vw,34px);white-space:pre-line;
+}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:clamp(8px,3vw,16px)}
+.page-ind{flex:1;text-align:center;color:var(--pb);font-weight:bold;font-size:clamp(13px,3vw,15px)}
+.nav-btn{
+  background:linear-gradient(135deg,var(--pink),#ffe0ec,#ffb3d9);
+  border:2px solid var(--pink-d);color:var(--purple);
+  padding:clamp(9px,2vw,12px) clamp(12px,2.5vw,22px);
+  border-radius:20px;cursor:pointer;font-weight:bold;
+  font-size:clamp(12px,2.8vw,14px);font-family:'Georgia',serif;
+  box-shadow:0 6px 18px rgba(255,192,217,.3),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .3s,box-shadow .3s;
+  min-width:clamp(72px,17vw,96px);white-space:nowrap;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.nav-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 9px 25px rgba(255,192,217,.5),inset 0 1px 0 rgba(255,255,255,.9)}
+.nav-btn:active:not(:disabled){transform:translateY(0)}
+.nav-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* final */
+.final-msg{
+  color:var(--purple);
+  font-size:clamp(18px,5.5vw,28px);
+  font-weight:normal;line-height:1.85;
+  text-align:center;
+  width:90%;max-width:460px;
+  margin:0 auto;
+  text-shadow:1px 1px 4px rgba(0,0,0,.1);
+  animation:pop .8s ease-out forwards;
+}
+</style>
 </head>
 <body>
-    <div class="sparkles-bg" id="sparklesBg"></div>
- 
-    <!-- Intro screen -->
-    <div class="screen intro-screen active" id="introScreen">
-        <h1 class="title">✨ Волшебная сказка ✨</h1>
- 
-        <div class="gift-scene">
-            <!-- Envelope -->
-            <div class="envelope-wrap" id="envelope">
-                <!-- Тело конверта -->
-                <div class="env-body">
-                    <div class="env-bottom"></div>
-                </div>
-                <!-- Клапан -->
-                <div class="env-flap"></div>
-                <!-- Печать -->
-                <div class="env-seal">
-                    <svg width="40" height="40" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                            fill="#ff9bb5" filter="url(#shadow)"/>
-                        <defs>
-                            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.2"/>
-                            </filter>
-                        </defs>
-                    </svg>
-                </div>
-            </div>
- 
-            <!-- Bouquet -->
-            <div class="bouquet">
-                <svg class="svg-bouquet" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-                    <defs>
-                        <linearGradient id="flowerRose" x1="0%" y1="0%" x2="100%">
-                            <stop offset="0%" style="stop-color:#f4b5d0"/>
-                            <stop offset="100%" style="stop-color:#ff9bb5"/>
-                        </linearGradient>
-                        <linearGradient id="flowerCream" x1="0%" y1="0%" x2="100%">
-                            <stop offset="0%" style="stop-color:#ffefd5"/>
-                            <stop offset="100%" style="stop-color:#ffe5bc"/>
-                        </linearGradient>
-                        <linearGradient id="flowerPeach" x1="0%" y1="0%" x2="100%">
-                            <stop offset="0%" style="stop-color:#ffcba4"/>
-                            <stop offset="100%" style="stop-color:#ffb8a8"/>
-                        </linearGradient>
-                    </defs>
-                    <line x1="95" y1="220" x2="85" y2="80" stroke="#5a9a5a" stroke-width="5" stroke-linecap="round"/>
-                    <line x1="105" y1="220" x2="105" y2="70" stroke="#6ab66a" stroke-width="4" stroke-linecap="round"/>
-                    <line x1="115" y1="220" x2="125" y2="90" stroke="#5a9a5a" stroke-width="4" stroke-linecap="round"/>
-                    <ellipse cx="75" cy="140" rx="6" ry="15" fill="#5a9a5a" opacity="0.8" transform="rotate(-30 75 140)"/>
-                    <ellipse cx="125" cy="150" rx="6" ry="15" fill="#6ab66a" opacity="0.8" transform="rotate(25 125 150)"/>
-                    <ellipse cx="105" cy="225" rx="20" ry="10" fill="#ffc0d9" opacity="0.9"/>
-                    <ellipse cx="100" cy="220" rx="8" ry="6" fill="#ff9bb5"/>
-                    <ellipse cx="110" cy="220" rx="8" ry="6" fill="#ff9bb5"/>
-                    <circle cx="105" cy="220" r="4" fill="#ff6b8f"/>
-                    <circle cx="90" cy="70" r="14" fill="url(#flowerRose)"/>
-                    <circle cx="90" cy="70" r="11" fill="#ff9bb5" opacity="0.8"/>
-                    <circle cx="90" cy="70" r="8" fill="#ff6b8f" opacity="0.9"/>
-                    <circle cx="110" cy="55" r="13" fill="url(#flowerCream)"/>
-                    <circle cx="110" cy="55" r="10" fill="#ffe5bc" opacity="0.8"/>
-                    <circle cx="110" cy="55" r="7" fill="#ffd9a3" opacity="0.9"/>
-                    <circle cx="100" cy="40" r="14" fill="url(#flowerPeach)"/>
-                    <circle cx="100" cy="40" r="11" fill="#ffb8a8" opacity="0.8"/>
-                    <circle cx="100" cy="40" r="8" fill="#ffa890" opacity="0.9"/>
-                    <circle cx="120" cy="80" r="13" fill="#f4b5d0"/>
-                    <circle cx="120" cy="80" r="10" fill="#f08fa8" opacity="0.8"/>
-                    <circle cx="120" cy="80" r="7" fill="#ed6f90" opacity="0.9"/>
-                    <circle cx="105" cy="90" r="5" fill="#fff5f0" opacity="0.9"/>
-                    <circle cx="85" cy="100" r="5" fill="#fff5f0" opacity="0.9"/>
-                </svg>
-            </div>
-        </div>
- 
-        <div class="button-container">
-            <button class="magic-button" id="openBtn">Открыть письмо</button>
-        </div>
- 
-        <div class="intro-message hidden" id="introMessage">
-            Для Катюши с любовью 💐
-        </div>
+<div id="bg"></div>
+
+<!-- INTRO -->
+<div class="screen" id="s0">
+  <h1 class="title">✨ Волшебная сказка ✨</h1>
+  <div class="gift-scene">
+    <div class="envelope-wrap" id="env">
+      <div class="env-body"><div class="env-bottom"></div></div>
+      <div class="env-flap-border" id="efb"></div>
+      <div class="env-flap" id="ef"></div>
+      <div class="env-seal">
+        <svg width="40" height="40" viewBox="0 0 24 24">
+          <defs><filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity=".2"/></filter></defs>
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff9bb5" filter="url(#sh)"/>
+        </svg>
+      </div>
     </div>
- 
-    <!-- Card screen -->
-    <div class="screen card-screen hidden" id="cardScreen">
-        <div class="parchment-card">
-            <div class="parchment-content">
-                <div class="page-text" id="pageText"></div>
-                <div class="page-controls">
-                    <button class="nav-button" id="prevButton">← Назад</button>
-                    <div class="page-indicator" id="pageIndicator">1 / 3</div>
-                    <button class="nav-button" id="nextButton">Дальше →</button>
-                </div>
-            </div>
-        </div>
+    <div class="bouquet">
+      <svg class="svg-bouquet" viewBox="0 0 200 280">
+        <defs>
+          <linearGradient id="gR" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f4b5d0"/><stop offset="100%" stop-color="#ff9bb5"/></linearGradient>
+          <linearGradient id="gC" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ffefd5"/><stop offset="100%" stop-color="#ffe5bc"/></linearGradient>
+          <linearGradient id="gP" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ffcba4"/><stop offset="100%" stop-color="#ffb8a8"/></linearGradient>
+        </defs>
+        <line x1="95" y1="220" x2="85" y2="80" stroke="#5a9a5a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="105" y1="220" x2="105" y2="70" stroke="#6ab66a" stroke-width="4" stroke-linecap="round"/>
+        <line x1="115" y1="220" x2="125" y2="90" stroke="#5a9a5a" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="75" cy="140" rx="6" ry="15" fill="#5a9a5a" opacity=".8" transform="rotate(-30 75 140)"/>
+        <ellipse cx="125" cy="150" rx="6" ry="15" fill="#6ab66a" opacity=".8" transform="rotate(25 125 150)"/>
+        <ellipse cx="105" cy="225" rx="20" ry="10" fill="#ffc0d9" opacity=".9"/>
+        <ellipse cx="100" cy="220" rx="8" ry="6" fill="#ff9bb5"/>
+        <ellipse cx="110" cy="220" rx="8" ry="6" fill="#ff9bb5"/>
+        <circle cx="105" cy="220" r="4" fill="#ff6b8f"/>
+        <circle cx="90" cy="70" r="14" fill="url(#gR)"/><circle cx="90" cy="70" r="11" fill="#ff9bb5" opacity=".8"/><circle cx="90" cy="70" r="8" fill="#ff6b8f" opacity=".9"/>
+        <circle cx="110" cy="55" r="13" fill="url(#gC)"/><circle cx="110" cy="55" r="10" fill="#ffe5bc" opacity=".8"/><circle cx="110" cy="55" r="7" fill="#ffd9a3" opacity=".9"/>
+        <circle cx="100" cy="40" r="14" fill="url(#gP)"/><circle cx="100" cy="40" r="11" fill="#ffb8a8" opacity=".8"/><circle cx="100" cy="40" r="8" fill="#ffa890" opacity=".9"/>
+        <circle cx="120" cy="80" r="13" fill="#f4b5d0"/><circle cx="120" cy="80" r="10" fill="#f08fa8" opacity=".8"/><circle cx="120" cy="80" r="7" fill="#ed6f90" opacity=".9"/>
+        <circle cx="105" cy="90" r="5" fill="#fff5f0" opacity=".9"/>
+        <circle cx="85" cy="100" r="5" fill="#fff5f0" opacity=".9"/>
+      </svg>
     </div>
- 
-    <!-- Final screen -->
-    <div class="screen final-screen hidden" id="finalScreen">
-        <div class="final-message" id="finalMessage">
-            Сказка закончилась,<br>а счастье только начинается 💐
-        </div>
+  </div>
+  <button class="magic-btn" id="openBtn">Открыть письмо</button>
+  <div class="intro-msg hidden" id="im">Для Катюши с любовью 💐</div>
+</div>
+
+<!-- CARD -->
+<div class="screen hidden" id="s1">
+  <div class="parchment">
+    <div class="page-text" id="pt"></div>
+    <div class="controls">
+      <button class="nav-btn" id="prev">← Назад</button>
+      <div class="page-ind" id="pi">1 / 3</div>
+      <button class="nav-btn" id="next">Дальше →</button>
     </div>
- 
-    <script>
-        function generateSparkles() {
-            const bg = document.getElementById('sparklesBg');
-            const count = window.innerWidth < 768 ? 30 : 60;
-            for (let i = 0; i < count; i++) {
-                const s = document.createElement('div');
-                s.className = 'sparkle';
-                s.style.left = Math.random() * 100 + '%';
-                s.style.top = Math.random() * 100 + '%';
-                s.style.animationDelay = Math.random() * 3 + 's';
-                bg.appendChild(s);
-            }
-            for (let i = 0; i < 8; i++) {
-                const p = document.createElement('div');
-                p.className = 'petal';
-                p.textContent = '🌸';
-                p.style.left = Math.random() * 100 + '%';
-                p.style.top = '-30px';
-                p.style.animationDelay = Math.random() * 6 + 's';
-                bg.appendChild(p);
-            }
-        }
- 
-        const pages = [
-            `О, Катюша!\nЯ узнал, что у тебя великий день.\n\nУ тебя с Андреем родилась замечательная дочь — Маша.\n\nЭто не просто радостная новость.\nЭто начало новой, светлой и прекрасной главы вашей жизни.`,
-            `Пусть Маша растёт здоровой, счастливой, любимой и окружённой теплом.\n\nПусть в её жизни будет много света, добрых людей, радости, улыбок и чудес.\n\nПусть каждый её день будет наполнен любовью, заботой и нежностью.`,
-            `А тебе желаю сил, терпения, спокойствия и бесконечного счастья.\n\nПусть дом будет наполнен смехом, теплом и любовью.\n\nС рождением доченьки, дорогая Катюша!`
-        ];
- 
-        let currentPage = 0;
- 
-        const openBtn = document.getElementById('openBtn');
-        const envelope = document.getElementById('envelope');
-        const introMessage = document.getElementById('introMessage');
-        const introScreen = document.getElementById('introScreen');
-        const cardScreen = document.getElementById('cardScreen');
-        const finalScreen = document.getElementById('finalScreen');
-        const pageText = document.getElementById('pageText');
-        const pageIndicator = document.getElementById('pageIndicator');
-        const prevButton = document.getElementById('prevButton');
-        const nextButton = document.getElementById('nextButton');
- 
-        generateSparkles();
- 
-        openBtn.addEventListener('click', () => {
-            openBtn.disabled = true;
-            envelope.classList.add('open');
-            introMessage.classList.remove('hidden');
-            introMessage.classList.add('show');
- 
-            setTimeout(() => {
-                introMessage.classList.remove('show');
-                introMessage.classList.add('hidden');
-                introScreen.classList.add('hidden');
-                cardScreen.classList.remove('hidden');
-                currentPage = 0;
-                renderPage();
-            }, 5000);
-        });
- 
-        function renderPage() {
-            pageText.textContent = pages[currentPage];
-            pageIndicator.textContent = `${currentPage + 1} / ${pages.length}`;
-            prevButton.disabled = currentPage === 0;
-            nextButton.textContent = currentPage === pages.length - 1 ? 'Конец ✨' : 'Дальше →';
-        }
- 
-        prevButton.addEventListener('click', () => {
-            if (currentPage > 0) { currentPage--; renderPage(); }
-        });
- 
-        nextButton.addEventListener('click', () => {
-            if (currentPage < pages.length - 1) {
-                currentPage++; renderPage();
-            } else {
-                cardScreen.classList.add('hidden');
-                finalScreen.classList.remove('hidden');
-            }
-        });
- 
-        document.addEventListener('keydown', (e) => {
-            if (!cardScreen.classList.contains('hidden')) {
-                if (e.key === 'ArrowLeft' && currentPage > 0) { currentPage--; renderPage(); }
-                else if (e.key === 'ArrowRight' && currentPage < pages.length - 1) { currentPage++; renderPage(); }
-            }
-        });
-    </script>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="s2" style="display:none;position:fixed;inset:0;z-index:20;justify-content:center;align-items:center;background:linear-gradient(135deg,#f5e6f0,#e8d5e8 25%,#f0dce8 50%,#e8d5e8 75%,#f5e6f0);">
+  <div style="color:#8b5a7f;font-family:'Georgia',serif;font-size:clamp(18px,5vw,26px);line-height:1.85;text-align:center;padding:32px;max-width:90vw;text-shadow:1px 1px 4px rgba(0,0,0,.1);">Сказка закончилась,<br>а счастье только начинается 💐</div>
+</div>
+
+<script>
+// Envelope sizing
+function resize(){
+  const vw=window.innerWidth;
+  const w=Math.min(Math.max(220,vw*0.68),320);
+  const h=Math.round(w*0.647);
+  const e=document.getElementById('env');
+  e.style.width=w+'px'; e.style.height=h+'px';
+  const half=w/2+1, fh=h*0.55;
+  const f=document.getElementById('ef');
+  f.style.borderLeftWidth=half+'px'; f.style.borderRightWidth=half+'px';
+  f.style.borderTopWidth=fh+'px'; f.style.borderTopColor='#f0e8df';
+  const b=document.getElementById('efb');
+  b.style.borderLeftWidth=(half+1)+'px'; b.style.borderRightWidth=(half+1)+'px';
+  b.style.borderTopWidth=(fh+2)+'px'; b.style.borderTopColor='#d4c5b8';
+}
+resize(); window.addEventListener('resize',resize);
+
+// Sparkles
+(function(){
+  const bg=document.getElementById('bg');
+  const n=window.innerWidth<768?20:50;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('div'); s.className='sparkle';
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${(Math.random()*3).toFixed(2)}s`;
+    bg.appendChild(s);
+  }
+  for(let i=0;i<7;i++){
+    const p=document.createElement('div'); p.className='petal'; p.textContent='🌸';
+    p.style.cssText=`left:${Math.random()*100}%;top:-20px;animation-delay:${(Math.random()*6).toFixed(2)}s`;
+    bg.appendChild(p);
+  }
+})();
+
+// Pages
+const pages=[
+  `О, Катюша!\nЯ узнал, что у тебя великий день.\n\nУ тебя с Андреем родилась замечательная дочь — Маша.\n\nЭто не просто радостная новость.\nЭто начало новой, светлой и прекрасной главы вашей жизни.`,
+  `Пусть Маша растёт здоровой, счастливой, любимой и окружённой теплом.\n\nПусть в её жизни будет много света, добрых людей, радости, улыбок и чудес.\n\nПусть каждый её день будет наполнен любовью, заботой и нежностью.`,
+  `А тебе желаю сил, терпения, спокойствия и бесконечного счастья.\n\nПусть дом будет наполнен смехом, теплом и любовью.\n\nС рождением доченьки, дорогая Катюша!`
+];
+let cur=0;
+const s0=document.getElementById('s0'), s1=document.getElementById('s1'), s2=document.getElementById('s2');
+const im=document.getElementById('im'), pt=document.getElementById('pt'), pi=document.getElementById('pi');
+const prev=document.getElementById('prev'), next=document.getElementById('next');
+
+document.getElementById('openBtn').addEventListener('click',function(){
+  this.disabled=true;
+  document.getElementById('env').classList.add('open');
+  im.classList.remove('hidden'); im.classList.add('show');
+  setTimeout(()=>{
+    im.classList.add('hidden');
+    s0.classList.add('hidden'); s1.classList.remove('hidden');
+    cur=0; render(); window.scrollTo(0,0);
+  },4000);
+});
+
+function render(){
+  pt.textContent=pages[cur];
+  pi.textContent=`${cur+1} / ${pages.length}`;
+  prev.disabled=cur===0;
+  next.textContent=cur===pages.length-1?'Конец ✨':'Дальше →';
+}
+
+prev.addEventListener('click',()=>{if(cur>0){cur--;render();}});
+next.addEventListener('click',()=>{
+  if(cur<pages.length-1){cur++;render();}
+  else{
+    s1.classList.add('hidden');
+    s2.style.display='flex';
+    window.scrollTo(0,0);
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(!s1.classList.contains('hidden')){
+    if(e.key==='ArrowLeft'&&cur>0){cur--;render();}
+    if(e.key==='ArrowRight'&&cur<pages.length-1){cur++;render();}
+  }
+});
+</script>
 </body>
 </html>
